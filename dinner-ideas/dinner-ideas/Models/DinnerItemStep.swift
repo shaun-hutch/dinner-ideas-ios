@@ -17,3 +17,4 @@ struct DinnerItemStep : Identifiable, Codable {
         self.id = UUID()
     }
 }
+

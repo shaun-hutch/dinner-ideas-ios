@@ -6,7 +6,9 @@
 //
 
 import SwiftUI
+import FoundationModels
 
+@Generable
 enum FoodTag: String, CaseIterable, Identifiable, Codable {
     case Quick
     case Vegeterian

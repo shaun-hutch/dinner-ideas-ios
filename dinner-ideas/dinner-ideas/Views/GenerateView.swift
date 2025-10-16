@@ -138,7 +138,7 @@ struct GenerateView: View {
                         
                         // Generated items list
                         List(generatedItems, id: \.id) { item in
-                            NavigationLink(destination: DetailView(item: .constant(item))) {
+                            NavigationLink(destination: DetailView(item: .constant(item), saveAction: saveAction)) {
                                 DinnerItemCardView(item: item)
                             }
                             .listRowBackground(Color.clear)

@@ -15,7 +15,7 @@ struct dinner_ideasApp: App {
     var body: some Scene {
         WindowGroup {
             TabView {
-                Tab("Recipes", systemImage: "fork.knife.circle") {
+                Tab("Recipes", systemImage: "fork.knife.circle", role: .search) {
                     DinnerItemsView(dinnerItems: $store.savedItems) {
                         Task {
                             do {
