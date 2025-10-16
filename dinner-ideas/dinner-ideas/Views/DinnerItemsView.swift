@@ -76,7 +76,7 @@ struct DinnerItemsView: View {
                             // Create a binding to the underlying dinnerItems element by id
                             if let index = dinnerItems.firstIndex(where: { $0.id == item.id }) {
                                 let binding = $dinnerItems[index]
-                                NavigationLink(destination: DetailView(item: binding)) {
+                                NavigationLink(destination: DetailView(item: binding, saveAction: saveAction)) {
                                     DinnerItemCardView(item: item)
                                 }
                                 .listRowBackground(Color.clear)

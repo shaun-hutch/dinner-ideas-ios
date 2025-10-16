@@ -9,6 +9,7 @@ import SwiftUI
 
 struct DetailView: View {
     @Binding var item: DinnerItem
+    let saveAction: () -> Void
     
     @State var itemImage: UIImage?
     @State var tempImage: UIImage?
@@ -164,6 +165,9 @@ struct DetailView: View {
                                 
                                 itemImage = tempImage
                                 item.image = FileHelper.saveImage(image: tempImage)
+                                
+                                // Save the changes to disk
+                                saveAction()
                             }
                             .fontWeight(.semibold)
                         }
@@ -229,5 +233,5 @@ struct StepCard: View {
 }
 
 #Preview {
-    DetailView(item: .constant(DinnerItem.sampleItems[0]))
+    DetailView(item: .constant(DinnerItem.sampleItems[0]), saveAction: {})
 }
