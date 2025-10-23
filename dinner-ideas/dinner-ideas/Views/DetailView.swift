@@ -20,160 +20,204 @@ struct DetailView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
-                // Hero Image Section
-                Group {
-                    if let image = itemImage {
-                        Image(uiImage: image)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } else {
-                        Rectangle()
-                            .fill(.tertiary)
-                            .overlay {
-                                VStack(spacing: 8) {
-                                    Image(systemName: "photo")
-                                        .font(.system(size: 48))
-                                    Text("No Image")
-                                        .font(.caption)
-                                }
-                                .foregroundStyle(.secondary)
-                            }
-                    }
-                }
-                .frame(height: 280)
-                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .padding(.horizontal, 20)
-                
-                // Content sections
-                VStack(spacing: 20) {
-                    // Title and basic info
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(item.name)
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        if !item.description.isEmpty {
-                            Text(item.description)
-                                .font(.body)
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                    .padding(20)
-                    .background(.regularMaterial, in: .rect(cornerRadius: 16, style: .continuous))
-                    
-                    // Time information
-                    HStack(spacing: 16) {
-                        TimeInfoCard(
-                            title: "Prep Time",
-                            time: DinnerItem.formatTimeToHoursAndMinutes(time: item.prepTime),
-                            icon: "clock"
-                        )
-                        
-                        TimeInfoCard(
-                            title: "Cook Time", 
-                            time: DinnerItem.formatTimeToHoursAndMinutes(time: item.cookTime),
-                            icon: "flame"
-                        )
-                        
-                        TimeInfoCard(
-                            title: "Total Time",
-                            time: DinnerItem.formatTimeToHoursAndMinutes(time: item.totalTime),
-                            icon: "timer"
-                        )
-                    }
-                    
-                    // Tags section
-                    if !item.tags.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Image(systemName: "tag.fill")
-                                    .foregroundStyle(.secondary)
-                                Text("Tags")
-                                    .font(.headline)
-                                    .fontWeight(.semibold)
-                                Spacer()
-                            }
-                            
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3)) {
-                                ForEach(item.tags, id: \.self.id) { tag in
-                                    FoodTagView(tag: tag)
-                                }
-                            }
-                        }
-                        .padding(20)
-                        .background(.regularMaterial, in: .rect(cornerRadius: 16, style: .continuous))
-                    }
-                    
-                    // Steps section
-                    if !item.steps.isEmpty {
-                        VStack(alignment: .leading, spacing: 16) {
-                            HStack {
-                                Image(systemName: "list.number")
-                                    .foregroundStyle(.secondary)
-                                Text("Instructions")
-                                    .font(.headline)
-                                    .fontWeight(.semibold)
-                                Spacer()
-                            }
-                            
-                            ForEach(Array(item.steps.enumerated()), id: \.offset) { index, step in
-                                StepCard(stepNumber: index + 1, step: step)
-                            }
-                        }
-                        .padding(20)
-                        .background(.regularMaterial, in: .rect(cornerRadius: 16, style: .continuous))
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
+                heroImageSection
+                contentSections
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Edit") {
-                    isPresentingEditView = true
-                    editingItem = item
-                    tempImage = itemImage
-                }
-                .fontWeight(.medium)
+                editButton
             }
         }
         .onAppear {
-            itemImage = FileHelper.loadImage(fileName: item.image ?? "")
-            tempImage = itemImage
+            loadImage()
         }
         .sheet(isPresented: $isPresentingEditView) {
-            NavigationStack {
-                DetailEditView(item: $editingItem, itemImage: $tempImage)
-                    .navigationTitle("Edit Recipe")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Cancel") {
-                                isPresentingEditView = false
-                                tempImage = itemImage
-                            }
+            editSheet
+        }
+    }
+    
+    // MARK: - View Components
+    
+    @ViewBuilder
+    private var heroImageSection: some View {
+        Group {
+            if let image = itemImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                Rectangle()
+                    .fill(.tertiary)
+                    .overlay {
+                        VStack(spacing: 8) {
+                            Image(systemName: "photo")
+                                .font(.system(size: 48))
+                            Text("No Image")
+                                .font(.caption)
                         }
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Save") {
-                                isPresentingEditView = false
-                                item = editingItem
-                                
-                                itemImage = tempImage
-                                item.image = FileHelper.saveImage(image: tempImage)
-                                
-                                // Save the changes to disk
-                                saveAction()
-                            }
-                            .fontWeight(.semibold)
-                        }
+                        .foregroundStyle(.secondary)
                     }
             }
         }
+        .frame(height: 280)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(.horizontal, 20)
+    }
+    
+    @ViewBuilder
+    private var contentSections: some View {
+        VStack(spacing: 20) {
+            basicInfoSection
+            timeInfoSection
+            
+            if !item.tags.isEmpty {
+                tagsSection
+            }
+            
+            if !item.steps.isEmpty {
+                stepsSection
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+    }
+    
+    @ViewBuilder
+    private var basicInfoSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(item.name)
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            if !item.description.isEmpty {
+                Text(item.description)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(20)
+        .background(.regularMaterial, in: .rect(cornerRadius: 16, style: .continuous))
+    }
+    
+    @ViewBuilder
+    private var timeInfoSection: some View {
+        HStack(spacing: 16) {
+            TimeInfoCard(
+                title: "Prep Time",
+                time: DinnerItem.formatTimeToHoursAndMinutes(time: item.prepTime),
+                icon: "clock"
+            )
+            
+            TimeInfoCard(
+                title: "Cook Time", 
+                time: DinnerItem.formatTimeToHoursAndMinutes(time: item.cookTime),
+                icon: "flame"
+            )
+            
+            TimeInfoCard(
+                title: "Total Time",
+                time: DinnerItem.formatTimeToHoursAndMinutes(time: item.totalTime),
+                icon: "timer"
+            )
+        }
+    }
+    
+    @ViewBuilder
+    private var tagsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "tag.fill")
+                    .foregroundStyle(.secondary)
+                Text("Tags")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                Spacer()
+            }
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2)) {
+                ForEach(item.tags, id: \.self.id) { tag in
+                    FoodTagView(tag: tag)
+                }
+            }
+        }
+        .padding(20)
+        .background(.regularMaterial, in: .rect(cornerRadius: 16, style: .continuous))
+    }
+    
+    @ViewBuilder
+    private var stepsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "list.number")
+                    .foregroundStyle(.secondary)
+                Text("Instructions")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                Spacer()
+            }
+            
+            ForEach(Array(item.steps.enumerated()), id: \.offset) { index, step in
+                StepCard(stepNumber: index + 1, step: step)
+            }
+        }
+        .padding(20)
+        .background(.regularMaterial, in: .rect(cornerRadius: 16, style: .continuous))
+    }
+    
+    @ViewBuilder
+    private var editButton: some View {
+        Button("Edit") {
+            isPresentingEditView = true
+            editingItem = item
+            tempImage = itemImage
+        }
+        .fontWeight(.medium)
+    }
+    
+    @ViewBuilder
+    private var editSheet: some View {
+        NavigationStack {
+            DetailEditView(item: $editingItem, itemImage: $tempImage)
+                .navigationTitle("Edit Recipe")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            isPresentingEditView = false
+                            tempImage = itemImage
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") {
+                            saveChanges()
+                        }
+                        .fontWeight(.semibold)
+                    }
+                }
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func loadImage() {
+        itemImage = FileHelper.loadImage(fileName: item.image ?? "")
+        tempImage = itemImage
+    }
+    
+    private func saveChanges() {
+        isPresentingEditView = false
+        item = editingItem
+        
+        itemImage = tempImage
+        item.image = FileHelper.saveImage(image: tempImage)
+        
+        // Save the changes to disk
+        saveAction()
     }
 }
 

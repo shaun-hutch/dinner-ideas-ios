@@ -15,7 +15,7 @@ struct dinner_ideasApp: App {
     var body: some Scene {
         WindowGroup {
             TabView {
-                Tab("Recipes", systemImage: "fork.knife.circle", role: .search) {
+                Tab("Recipes", systemImage: "fork.knife.circle") {
                     DinnerItemsView(dinnerItems: $store.savedItems) {
                         Task {
                             do {
@@ -26,6 +26,7 @@ struct dinner_ideasApp: App {
                         }
                     }
                 }
+                .customizationID("recipes")
                 
                 Tab("Generate", systemImage: "wand.and.stars") {
                     GenerateView(dinnerItems: store.savedItems) {

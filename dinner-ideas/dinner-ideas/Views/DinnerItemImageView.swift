@@ -26,75 +26,10 @@ struct DinnerItemImageView: View {
     
     var body: some View {
         ZStack {
-            // Image display
-            Group {
-                if let image = selectedImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    Rectangle()
-                        .fill(.quaternary.opacity(0.3))
-                        .overlay {
-                            VStack(spacing: 12) {
-                                Image(systemName: "photo")
-                                    .font(.system(size: 48))
-                                    .foregroundStyle(.secondary)
-                                
-                                if canEdit {
-                                    Text("Add Photo")
-                                        .font(.headline)
-                                        .foregroundStyle(.secondary)
-                                    
-                                    Text("Tap to add an image")
-                                        .font(.caption)
-                                        .foregroundStyle(.tertiary)
-                                        
-                                    Button("Choose Photo") {
-                                        showingImageActionSheet = true
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .controlSize(.small)
-                                    .padding(.top, 8)
-                                } else {
-                                    Text("No Image")
-                                        .font(.caption)
-                                        .foregroundStyle(.tertiary)
-                                }
-                            }
-                        }
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 200)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(.quaternary, lineWidth: 0.5)
-            }
-            .onTapGesture {
-                if canEdit {
-                    showingImageActionSheet = true
-                }
-            }
+            imageDisplayView
             
-            // Edit overlay when editing is enabled - add visual indicator for existing images
             if canEdit && selectedImage != nil {
-                VStack {
-                    HStack {
-                        Spacer()
-                        Button(action: {
-                            showingImageActionSheet = true
-                        }) {
-                            Image(systemName: "pencil.circle.fill")
-                                .font(.title2)
-                                .foregroundStyle(.white)
-                                .background(.ultraThinMaterial, in: .circle)
-                        }
-                        .padding(12)
-                    }
-                    Spacer()
-                }
+                editOverlay
             }
         }
         .sheet(isPresented: $isShowingCamera) {
@@ -132,33 +67,122 @@ struct DinnerItemImageView: View {
             }
         }
         .confirmationDialog(selectedImage != nil ? "Edit Photo" : "Add Photo", isPresented: $showingImageActionSheet, titleVisibility: .visible) {
-            Button("Take Photo") {
-                Task {
-                    await checkCameraPermission()
-                }
+            imageActionButtons
+        }
+    }
+    
+    // MARK: - View Components
+    
+    @ViewBuilder
+    private var imageDisplayView: some View {
+        Group {
+            if let image = selectedImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                placeholderView
             }
-            
-            Button("Choose from Library") {
-                isShowingPicker = true
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 250)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(.quaternary, lineWidth: 0.5)
+        }
+        .onTapGesture {
+            if canEdit {
+                showingImageActionSheet = true
             }
-            
-            if supportsImagePlayground {
-                Button("Generate with AI") {
-                    isShowingImagePlayground = true
-                }
-            }
-            
-            if selectedImage != nil {
-                Button("Remove Photo", role: .destructive) {
-                    withAnimation(.bouncy) {
-                        selectedImage = nil
+        }
+    }
+    
+    @ViewBuilder
+    private var placeholderView: some View {
+        Rectangle()
+            .fill(.quaternary.opacity(0.3))
+            .overlay {
+                VStack(spacing: 12) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                    
+                    if canEdit {
+                        Text("Add Photo")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                        
+                        Text("Tap to add an image")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            
+                        Button("Choose Photo") {
+                            showingImageActionSheet = true
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .padding(.top, 8)
+                    } else {
+                        Text("No Image")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
                     }
                 }
             }
-            
-            Button("Cancel", role: .cancel) { }
+    }
+    
+    @ViewBuilder
+    private var editOverlay: some View {
+        VStack {
+            HStack {
+                Spacer()
+                Button(action: {
+                    showingImageActionSheet = true
+                }) {
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.white)
+                        .background(.ultraThinMaterial, in: .circle)
+                }
+                .padding(12)
+            }
+            Spacer()
         }
     }
+    
+    @ViewBuilder
+    private var imageActionButtons: some View {
+        Button("Take Photo") {
+            Task {
+                await checkCameraPermission()
+            }
+        }
+        
+        Button("Choose from Library") {
+            isShowingPicker = true
+        }
+        
+        if supportsImagePlayground {
+            Button("Generate with AI") {
+                isShowingImagePlayground = true
+            }
+        }
+        
+        if selectedImage != nil {
+            Button("Remove Photo", role: .destructive) {
+                withAnimation(.bouncy) {
+                    selectedImage = nil
+                }
+            }
+        }
+        
+        Button("Cancel", role: .cancel) { }
+    }
+    
+    // MARK: - Context Menu (Legacy)
+    
+    // Keeping this for potential future use
     
     @ViewBuilder
     private func ContextMenuContent() -> some View {
@@ -220,5 +244,13 @@ struct DinnerItemImageView: View {
 }
 
 #Preview {
-    DinnerItemImageView(canEdit: true, imageGenerationConcept: .constant("Chicken Salad"), selectedImage: .constant(UIImage(systemName: "person.circle")!))
+    DinnerItemImageView(canEdit: true, imageGenerationConcept: .constant("Chicken Salad"), selectedImage: .constant(nil))
+}
+
+#Preview("With Image") {
+    DinnerItemImageView(
+        canEdit: true,
+        imageGenerationConcept: .constant("Chicken Salad"),
+        selectedImage: .constant(UIImage(named: "PlaceholderImage"))
+    )
 }
