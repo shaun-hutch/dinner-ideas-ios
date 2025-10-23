@@ -138,3 +138,4 @@ AuthKey_*.p8
 # iOS Simulator files
 .LSOverride
 .DS_Store
+dinner-ideas/dinner-ideas.xcodeproj/project.xcworkspace/xcuserdata/shaun.xcuserdatad/UserInterfaceState.xcuserstate
